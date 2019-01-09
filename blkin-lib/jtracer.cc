@@ -1,8 +1,5 @@
 #include "jtracer.hpp"
 
-thread_local ZTracer::Trace *ZTracer::active_trace=0;
-thread_local int ZTracer::hello=0;
-
 void __cyg_profile_func_enter (void *func, void *call_site)
 {
 	Dl_info info;

@@ -26,21 +26,22 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-.PHONY: default clean distclean
+.PHONY: default clean distclean run run_c run_pp
 
 MAJOR=0
 MINOR=1
-LIBS= -ldl -llttng-ust
+LIBS= -ldl -llttng-ust -ljaegertracing -lyaml-cpp
 DLIB=libblkin
 
 LIB_DIR=$(shell pwd)
+TEST_DIR=$(shell pwd)/tests
 prefix= /usr/local
 libdir= $(prefix)/lib
 incdir= $(prefix)/include
 
-H_FILES= zipkin_c.h zipkin_trace.h ztracer.hpp
+H_FILES= zipkin_c.h zipkin_trace.h ztracer.hpp jtracer.hpp
 
-default: $(DLIB).so 
+default: $(DLIB).so test testpp testppp
 
 $(DLIB).so: $(DLIB).$(MAJOR).so
 	ln -sf $< $@
@@ -57,6 +58,26 @@ zipkin_c.o: zipkin_c.c zipkin_c.h zipkin_trace.h
 tp.o: tp.c zipkin_trace.h
 	gcc -I. -fpic -g -c -o $@ $<
 
+test: $(TEST_DIR)/test.c $(DLIB).so
+	make -C tests test
+
+testpp: $(TEST_DIR)/test.cc $(DLIB).so
+	make -C tests testpp
+
+testppp: $(TEST_DIR)/test_p.cc $(DLIB).so
+	make -C tests testppp
+
+run_c:
+	make -C tests run_c
+
+run_pp:
+	make -C tests run_pp
+
+run_ppp:
+	make -C tests run_ppp
+
+run: run_c run_pp
+
 install:
 	install -m 644  $(DLIB).$(MAJOR).$(MINOR).so $(DESTDIR)/$(libdir)
 	cp -P $(DLIB).$(MAJOR).so $(DESTDIR)/$(libdir)
@@ -65,7 +86,7 @@ install:
 
 clean:
 	rm -f *.o *.so
-	make -C clean
+	make -C tests clean
 
 distclean: clean
 	rm -f socket

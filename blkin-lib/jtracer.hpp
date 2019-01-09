@@ -181,7 +181,6 @@ namespace ZTracer {
 	std::shared_ptr<jaegertracing::Tracer> tracer;
     public:
 	std::shared_ptr<opentracing::Span> _span;
-	int valid_trace = 0;
 //        std::shared_ptr<jaegertracing::Span>  __span;
     public:
 	// default constructor zero-initializes blkin_trace valid()
@@ -201,7 +200,6 @@ namespace ZTracer {
 	// construct a Trace with an optional parent
 	Trace(const char *name, const Endpoint *ep, const Trace *parent = NULL)
 	    {
-
 		tracer = std::static_pointer_cast<jaegertracing::Tracer>(opentracing::Tracer::Global());
 		opentracing::StartSpanOptions options;
 		options.tags.push_back({ "tag-key", 1.23 });
@@ -217,8 +215,6 @@ namespace ZTracer {
 		    blkin_init_new_trace(this, name, ep);
 		    _span = tracer->StartSpan(name);
 		}
-
-		valid_trace = 1;
 	    }
 
 
@@ -276,7 +272,6 @@ namespace ZTracer {
 		    _span = tracer->StartSpan(name);
 
 		}
-		valid_trace = 1;
 	    }
 
 	// copy constructor and operator need to account for name storage
@@ -288,7 +283,6 @@ namespace ZTracer {
 		endpoint = rhs.endpoint;
 	
 		_span = rhs._span;
-		valid_trace = 1;
 
 	    }
 	const Trace& operator=(const Trace &rhs)
@@ -298,12 +292,11 @@ namespace ZTracer {
 		info = rhs.info;
 		endpoint = rhs.endpoint;
 		_span = rhs._span;
-		valid_trace = 1;
 		return *this;
 	    }
 
 	// return true if the Trace has been initialized
-	bool valid() const { return (valid_trace) ? true : false; } //_span->context()->isValid(); }
+	bool valid() const { return info.trace_id != 0; } //_span->context()->isValid(); }
 	operator bool() const { return valid(); }
 
 	// (re)initialize a Trace with an optional parent
@@ -314,11 +307,9 @@ namespace ZTracer {
 		     _span = opentracing::Tracer::Global()->StartSpan(
                         name, { opentracing::ChildOf(&((parent->_span)->context())) });
 
-		     valid_trace  = 1;
 		    return blkin_init_child(this, parent,
 					    ep ? : parent->endpoint, name);
 		}
-		valid_trace = 1;
                 _span = opentracing::Tracer::Global()->StartSpan(name);
 		return blkin_init_new_trace(this, name, ep);
 	    }
@@ -438,10 +429,48 @@ namespace ZTracer {
 	    }
     };
     
-    extern thread_local Trace *active_trace;
-
-    extern thread_local int hello;
+    static thread_local Trace active_trace;
 
     static thread_local std::stack<std::shared_ptr<opentracing::Span>> trace_stack;
 }
+/*
+#ifdef __GNUC__
+void __cyg_profile_func_enter (void *func, void *call_site)
+{
+	Dl_info info;
+	std::shared_ptr<opentracing::Span> span;
+
+	if (dladdr(func, &info)) { // get function call information 
+		if (ZTracer::trace_stack.empty()) {
+			span = opentracing::Tracer::Global()->StartSpan(
+					info.dli_sname ? info.dli_sname : "?");
+		} else {
+			auto parent = ZTracer::trace_stack.top();
+			span = opentracing::Tracer::Global()->StartSpan(
+					info.dli_sname ? info.dli_sname : "?",
+					{opentracing::ChildOf(&(parent->context()))});
+		}
+		ZTracer::trace_stack.push(span);
+
+
+		//printf("Function Entry : %p %p [%s] [%s] \n", func, call_site,
+		//		info.dli_fname ? info.dli_fname : "?",
+		//		info.dli_sname ? info.dli_sname : "?");
+
+	}
+}
+
+void __cyg_profile_func_exit (void *func, void *call_site)
+{
+	Dl_info info;
+	std::shared_ptr<opentracing::Span> span;
+	if (dladdr(func, &info)) {
+		if (!ZTracer::trace_stack.empty()) {
+			span = ZTracer::trace_stack.top();
+			span->Finish();
+			ZTracer::trace_stack.pop();
+		}
+	}
+}
+#endif */
 #endif /* end of include guard: ZTRACER_H */

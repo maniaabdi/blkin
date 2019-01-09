@@ -354,3 +354,4 @@ int blkin_unpack_trace_info(const struct blkin_trace_info_packed *pinfo,
 
 	return 0;
 }
+
