@@ -8,7 +8,7 @@ set(blkin_srcs
 )
 add_library(blkin ${blkin_srcs})
 set_target_properties(blkin PROPERTIES POSITION_INDEPENDENT_CODE ON)
-target_link_libraries(blkin dl ${LTTNG_LIBRARIES})
+target_link_libraries(blkin dl ${LTTNG_LIBRARIES} ${JAEGER_LIBRARIES} ${OPENTRACE_LIBRARIES} ${YAMLCPP_LIBRARIES})
 
 set(blkin_headers
   zipkin_c.h
@@ -16,5 +16,3 @@ set(blkin_headers
   ztracer.hpp
   jtracer.hpp
 )
-
-add_subdirectory(tests)

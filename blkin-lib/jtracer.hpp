@@ -46,7 +46,7 @@
 extern "C" {
 #include <zipkin_c.h>
 }
-
+#include <arpa/inet.h>
 #include <yaml-cpp/yaml.h>
 #include <jaegertracing/Tracer.h>
 #include <jaegertracing/reporters/Config.h>
@@ -54,8 +54,9 @@ extern "C" {
 #include <jaegertracing/Span.h>
 #include <opentracing/span.h>
 
-
-#include "jaeger_carrier.hpp"
+#define SIGNED_RIGHT_SHIFT_IS 1
+#define ARITHMETIC_RIGHT_SHIFT 1
+//#include "jaeger_carrier.hpp"
 
 using namespace std;
 
@@ -111,6 +112,8 @@ namespace ZTracer {
         pthread_mutex_unlock(&blkin_init_mutex);
         return 0;
     }
+    
+    static inline int ztrace_init() { return blkin_init(); }
 
     class Endpoint : private blkin_endpoint {
     private:
