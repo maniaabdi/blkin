@@ -46,7 +46,7 @@
 extern "C" {
 #include <zipkin_c.h>
 }
-#include <arpa/inet.h>
+
 #include <yaml-cpp/yaml.h>
 #include <jaegertracing/Tracer.h>
 #include <jaegertracing/reporters/Config.h>
@@ -54,8 +54,7 @@ extern "C" {
 #include <jaegertracing/Span.h>
 #include <opentracing/span.h>
 
-#define SIGNED_RIGHT_SHIFT_IS 1
-#define ARITHMETIC_RIGHT_SHIFT 1
+
 //#include "jaeger_carrier.hpp"
 
 using namespace std;
@@ -99,7 +98,7 @@ namespace ZTracer {
          */
         pthread_mutex_lock(&blkin_init_mutex);
         if (!initialized2) {
-	   auto configYAML = YAML::LoadFile("/home/ubuntu/config.yml");
+	   auto configYAML = YAML::LoadFile("/home/maniaa/config.yml");
 	   static const auto config = jaegertracing::Config::parse(configYAML);
        	   static const auto tracer = jaegertracing::Tracer::make(
               name, config, jaegertracing::logging::nullLogger());
@@ -112,8 +111,8 @@ namespace ZTracer {
         pthread_mutex_unlock(&blkin_init_mutex);
         return 0;
     }
+  
     
-    static inline int ztrace_init() { return blkin_init(); }
 
     class Endpoint : private blkin_endpoint {
     private:
